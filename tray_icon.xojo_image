@@ -1,0 +1,46 @@
+#tag MultiImage
+Image tray_icon
+	#tag ImageRepresentation
+		SaveInfo = APHRcwECAQAAAAAeQzpcR2l0XFJlZGlyZWN0S2V5c1xpbWdcMTYucG5nAwAAAAABAAQAAAAAAQAAAAAAAAA=
+		FullPath = C:\Git\RedirectKeys\img\16.png
+		PartialPath = img\\16.png
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 16.00
+			Orientation = Any
+			Platform = 15
+			PPI = 72
+			VSize = 16.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+	#tag ImageRepresentation
+		SaveInfo = APHRcwECAQAAAAAeQzpcR2l0XFJlZGlyZWN0S2V5c1xpbWdcMzIucG5nAwAAAAABAAQAAAAAAQAAAAAAAAA=
+		FullPath = C:\Git\RedirectKeys\img\32.png
+		PartialPath = img\\32.png
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 16.00
+			Orientation = Any
+			Platform = 15
+			PPI = 144
+			VSize = 16.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+	#tag ImageRepresentation
+		SaveInfo = APHRcwECAQAAAAAeQzpcR2l0XFJlZGlyZWN0S2V5c1xpbWdcNjQucG5nAwAAAAABAAQAAAAAAQAAAAAAAAA=
+		FullPath = C:\Git\RedirectKeys\img\64.png
+		PartialPath = img\\64.png
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 16.00
+			Orientation = Any
+			Platform = 15
+			PPI = 216
+			VSize = 16.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+End Image
+#tag EndMultiImage
