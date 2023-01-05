@@ -10,6 +10,7 @@ Inherits WindowsKeyFilterMBS
 		  
 		  Dim iLParam As Integer
 		  Dim bScrollLock As Boolean
+		  Dim bReturn As Boolean = False
 		  
 		  // the flag bits are like this:
 		  // bit 0: Specifies whether the key Is an extended key, such As a Function key Or a key on the numeric keypad. The value Is 1 If the key Is an extended key; otherwise, it Is 0.
@@ -21,40 +22,53 @@ Inherits WindowsKeyFilterMBS
 		  bScrollLock = isScrollLockOn()
 		  
 		  
-		  //Global modifiers like Control and Numlock need to get handled by Windows
+		  //Global modifiers like Capslock and Numlock need to get handled by Windows
 		  If(bScrollLock And _
 		    vkCode <> VK_SCROLL And _
 		    vkCode <> VK_CAPITAL And _
-		    vkCode <> VK_CONTROL And _
-		    vkCode <> VK_MENU And _
 		    vkCode <> VK_NUMLOCK) Then
 		    //iLParam:
 		    //0-15 Repitition (unsupported currently)
 		    //16-23 Scancode
-		    iLParam = Bitwise.ShiftLeft(scanCode, 16)
+		    iLParam = 1 + Bitwise.ShiftLeft(scanCode, 16)
 		    //24 Extended Key
-		    iLParam = iLParam + Bitwise.ShiftLeft((flags And 1), 24)
+		    iLParam = iLParam + Bitwise.ShiftLeft(Bitwise.BitAnd(flags, 1), 24)
 		    
 		    //ALT Keys need to be send as WM_SYSKEYDOWN.
 		    If (Bitwise.BitAnd(flags, &B00100000) >= 1) Then
 		      //29 = ALTKeyDown
 		      iLParam = iLParam + Bitwise.ShiftLeft(1,29)
-		      Return WindowFunctions.SendMessage(iHWND, WM_SYSKEYDOWN, vkCode, iLParam)
+		      bReturn = WindowFunctions.SendMessage(iHWND, WM_SYSKEYDOWN, vkCode, iLParam)
 		    Else
-		      Return WindowFunctions.SendMessage(iHWND, WM_KEYDOWN, vkCode, iLParam)
+		      bReturn = WindowFunctions.SendMessage(iHWND, WM_KEYDOWN, vkCode, iLParam)
+		    End If
+		    
+		    //Let windows also send these keys, so the global keymap gets updated and functions like Keyboard.AsyncControlKey work.
+		    If vkCode = VK_CONTROL Or vkCode = VK_LCONTROL Or vkCode = VK_RCONTROL Or _
+		      vkCode = VK_MENU Or vkCode = VK_LMENU Or vkCode = VK_RMENU Or _
+		      vkCode = VK_SHIFT Or vkCode = VK_LSHIFT Or vkCode = VK_RSHIFT Then
+		      bReturn = False
 		    End If
 		    
 		  ElseIf (App.bSendFocusMessage And vkCode = VK_SCROLL) Then
 		    
 		    If bScrollLock Then
-		      Call WindowFunctions.SendMessage(iHWND, WM_KILLFOCUS, 0, 0)
+		      If bFirstScrolllockActive Then
+		        bFirstScrolllockActive = False
+		        Call WindowFunctions.SendMessage(iHWND, WM_SETFOCUS, 0, 0)
+		      End If
+		      bFirstScrolllockDeactive = True
 		    Else
-		      Call WindowFunctions.SendMessage(iHWND, WM_SETFOCUS, 0, 0)
+		      If bFirstScrolllockDeactive Then
+		        bFirstScrolllockDeactive = False
+		        Call WindowFunctions.SendMessage(iHWND, WM_KILLFOCUS, 0, 0)
+		      End If
+		      bFirstScrolllockActive = true
 		    End If
 		    
 		  End If
 		  
-		  return False
+		  Return breturn
 		End Function
 	#tag EndEvent
 
@@ -65,6 +79,7 @@ Inherits WindowsKeyFilterMBS
 		  //Redirect Key to the Window.
 		  
 		  Dim iLParam As Integer
+		  Dim bReturn As Boolean = False
 		  
 		  // the flag bits are like this:
 		  // bit 0: Specifies whether the key Is an extended key, such As a Function key Or a key on the numeric keypad. The value Is 1 If the key Is an extended key; otherwise, it Is 0.
@@ -73,34 +88,38 @@ Inherits WindowsKeyFilterMBS
 		  // bit 7: Specifies the transition state. The value Is 0 If the key Is pressed And 1 If it Is being released.
 		  // Other bits are reserved.
 		  
-		  //Global modifiers like Control and Numlock need to get handled by Windows
+		  //Global modifiers like Capslock and Numlock need to get handled by Windows
 		  If(isScrollLockOn() And _
 		    vkCode <> VK_SCROLL And _
 		    vkCode <> VK_CAPITAL And _
-		    vkCode <> VK_CONTROL And _
-		    vkCode <> VK_MENU And _
 		    vkCode <> VK_NUMLOCK) Then
 		    //iLParam:
 		    //0-15 Repitition (unsupported currently)
 		    //16-23 Scancode
-		    iLParam = Bitwise.ShiftLeft(scanCode, 16)
+		    iLParam = 1 + Bitwise.ShiftLeft(scanCode, 16)
 		    //24 Extended Key
-		    iLParam = iLParam + Bitwise.ShiftLeft((flags And 1), 24)
+		    iLParam = iLParam + Bitwise.ShiftLeft(Bitwise.BitAnd(flags, 1), 24)
 		    
 		    //30 Prev. State; 31 Transition State; Always 1
 		    iLParam = iLParam + Bitwise.ShiftLeft(&b11, 30)
 		    
 		    //ALT Keys need to be send as WM_SYSKEYDOWN.
-		    If (Bitwise.BitAnd(flags, &B00100000) >= 1) Then
+		    If (Bitwise.BitAnd(flags, &B00100000) >= 1 Or vkCode = VK_MENU Or vkCode = VK_LMENU) Then
 		      //29 = ALTKeyDown
 		      iLParam = iLParam + Bitwise.ShiftLeft(1,29)
-		      Return WindowFunctions.SendMessage(iHWND, WM_SYSKEYUP, vkCode, iLParam)
+		      bReturn = WindowFunctions.SendMessage(iHWND, WM_SYSKEYUP, vkCode, iLParam)
 		    Else
-		      Return WindowFunctions.SendMessage(iHWND, WM_KEYUP, vkCode, iLParam)
+		      bReturn = WindowFunctions.SendMessage(iHWND, WM_KEYUP, vkCode, iLParam)
+		    End If
+		    
+		    //Let windows also send these keys, so the global keymap gets updated and functions like Keyboard.AsyncControlKey work.
+		    If vkCode = VK_CONTROL Or vkCode = VK_LCONTROL Or vkCode = VK_RCONTROL Or _
+		      vkCode = VK_MENU Or vkCode = VK_LMENU Or vkCode = VK_RMENU Or _
+		      vkCode = VK_SHIFT Or vkCode = VK_LSHIFT Or vkCode = VK_RSHIFT Then
+		      bReturn = False
 		    End If
 		  End If
-		  
-		  Return False
+		  Return bReturn
 		End Function
 	#tag EndEvent
 
@@ -114,6 +133,14 @@ Inherits WindowsKeyFilterMBS
 	#tag EndMethod
 
 
+	#tag Property, Flags = &h21
+		Private bFirstScrolllockActive As Boolean = true
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private bFirstScrolllockDeactive As Boolean = true
+	#tag EndProperty
+
 	#tag Property, Flags = &h0
 		iHWND As Integer
 	#tag EndProperty
@@ -125,13 +152,34 @@ Inherits WindowsKeyFilterMBS
 	#tag Constant, Name = VK_CONTROL, Type = Double, Dynamic = False, Default = \"&h11", Scope = Private
 	#tag EndConstant
 
+	#tag Constant, Name = VK_LCONTROL, Type = Double, Dynamic = False, Default = \"&hA2", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = VK_LMENU, Type = Double, Dynamic = False, Default = \"&hA4", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = VK_LSHIFT, Type = Double, Dynamic = False, Default = \"&hA0", Scope = Private
+	#tag EndConstant
+
 	#tag Constant, Name = VK_MENU, Type = Double, Dynamic = False, Default = \"&h12", Scope = Private
 	#tag EndConstant
 
 	#tag Constant, Name = VK_NUMLOCK, Type = Double, Dynamic = False, Default = \"&h90", Scope = Private
 	#tag EndConstant
 
+	#tag Constant, Name = VK_RCONTROL, Type = Double, Dynamic = False, Default = \"&hA3", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = VK_RMENU, Type = Double, Dynamic = False, Default = \"&hA5", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = VK_RSHIFT, Type = Double, Dynamic = False, Default = \"&hA1", Scope = Private
+	#tag EndConstant
+
 	#tag Constant, Name = VK_SCROLL, Type = Double, Dynamic = False, Default = \"&h91", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = VK_SHIFT, Type = Double, Dynamic = False, Default = \"&h10", Scope = Private
 	#tag EndConstant
 
 	#tag Constant, Name = WM_KEYDOWN, Type = Double, Dynamic = False, Default = \"&h100", Scope = Private

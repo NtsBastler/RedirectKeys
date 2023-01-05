@@ -36,8 +36,6 @@ Now you can toggle the keyboard focus between your target application and the ex
 With the scrollock on your keystrokes will be redirected to the target application.
 The window with the actual focus will get your keyboard inputs with scrollock off.
 
-## Things to fix
-Currently modifier like Alt, Control and Shift don't work. You need to toggle caps lock to write uppercase letters.
 
 ## Debugging RedirectKeys yourself
 You need the [XOJO IDE](https://www.xojo.com/download/) to debug the program.
